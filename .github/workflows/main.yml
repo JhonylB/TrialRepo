@@ -1,17 +1,27 @@
-name: Super-Linter
+name: Upload Go test results
 
-on: push
+on: [push]
 
 jobs:
-  super-lint:
-     name: Limt code base
-     runs-on: ubuntu-latest
-     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        
-      - name: Run Super-Linter 
-        uses: github/super-linter@v3
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.14', '1.15', '1.16.x' ]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Install dependencies
+        run: go get .
+      - name: Test with Go
+        run: go test -json > TestResults-${{ matrix.go-version }}.json
+      - name: Upload Go test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: Go-results-${{ matrix.go-version }}
+          path: TestResults-${{ matrix.go-version }}.json
